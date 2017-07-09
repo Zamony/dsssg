@@ -2,7 +2,7 @@
 DSSSG is a dead-simple static site generator. You just create a .md file of your blog post, then type
 `python3 publish.py`
 and you are done.
-It's fully GithubPages-compatible: https://zamony.github.io/dsssg/
+It's fully GithubPages-compatible: https://zamony.github.io/
 ## Installation
 It works only on Python 3.3+ and you must install some dependencies. DSSSG uses mistune to convert Markdown into HTML, it also uses Jinja2 as a template engine.
     `pip3 install mistune`
