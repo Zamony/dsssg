@@ -1,16 +1,12 @@
-#NEXT LINE GOES YOUR POST'S DATE:
+<!-- date -->
 08.07.2017
-#NEXT LINE GOES YOUR POST'S TITLE: 
+<!-- title -->
 About && Installation Guide
-#NEXT LINE GO YOUR META-KEYWORDS
+<!-- meta_keywords -->
 dsssg, static site generator
-#NEXT LINE GOES YOUR META-DESCRIPTION
+<!-- meta_description -->
 You will know how to setup your own DSSSG blog
-#PUT YOUR POST INTRODUCTION BELOW (OPTIONAL, BLANK IF YOU USE DEFAULT THEME). MAKE SURE YOU HAVE ONE EMPTY LINE AFTER IT
-Example text goes
-here
-
-#PUT YOUR POST'S CONTENT BELOW
+<!-- content -->
 What is DSSSG? DSSSG is a dead-simple static site generator. You just create a .md file of your blog post, then type
 `python3 publish.py`
 and you are done.
