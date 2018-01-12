@@ -1,16 +1,12 @@
-#NEXT LINE GOES YOUR POST'S DATE:
+<!-- date -->
 09.07.2017
-#NEXT LINE GOES YOUR POST'S TITLE: 
+<!-- title -->
 How To Use DSSG && Custom Themes
-#NEXT LINE GO YOUR META-KEYWORDS
+<!-- meta_keywords -->
 dsssg, static site generator
-#NEXT LINE GOES YOUR META-DESCRIPTION
+<!-- meta_description -->
 You will know how to setup your own DSSSG blog
-#PUT YOUR POST INTRODUCTION BELOW (OPTIONAL, BLANK IF YOU USE DEFAULT THEME). MAKE SURE YOU HAVE ONE EMPTY LINE AFTER IT
-Example text goes
-here
-
-#PUT YOUR POST'S CONTENT BELOW
+<!-- content -->
 ## How to create a post?
 Go to the *md-file* folder. Then create a .md file of your post with the structure like this. Then open terminal in the base folder of DSSSG ( there should be publish.py ) and type in the terminal `python3 publish.py`
 ## Are custom themes supported?
