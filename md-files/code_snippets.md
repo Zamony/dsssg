@@ -1,16 +1,12 @@
-#NEXT LINE GOES YOUR POST'S DATE:
+<!-- date -->
 10.07.2017
-#NEXT LINE GOES YOUR POST'S TITLE: 
+<!-- title -->
 On Code Snippets Support
-#NEXT LINE GO YOUR META-KEYWORDS
+<!-- meta_keywords -->
 dsssg, static site generator
-#NEXT LINE GOES YOUR META-DESCRIPTION
+<!-- meta_description -->
 You will know how to setup your own DSSSG blog
-#PUT YOUR POST INTRODUCTION BELOW (OPTIONAL, BLANK IF YOU USE DEFAULT THEME). MAKE SURE YOU HAVE ONE EMPTY LINE AFTER IT
-Example text goes
-here
-
-#PUT YOUR POST'S CONTENT BELOW
+<!-- content -->
 DSSSG uses Prism.js code highlighter by default. If you wanna use code snippets in your blog, you are recommended to visit Prism.js website and configure your own prism.js file. Put it in the theme folder.
 Just place HTML tags `<pre><code class="language-xxx"></code></pre>` in your .md file, like this:
 <pre>
