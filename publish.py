@@ -1,190 +1,99 @@
-import locale
-import datetime
-import pprint
+import re
 import os
-import sys
-
-import mistune
+import shutil
 import jinja2
+import mistune
+import datetime
 
-POSTS_FOLDER = "posts"
-MDS_FOLDER = "md-files"
-THEME_FOLDER = "theme"
+POSTS_FOLDER, MDS_FOLDER, THEME_FOLDER = "posts", "md-files", "theme"
 
-# Display date in YOUR_LANGUAGE by setting up locale (ex. below for Russian)
-#locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
+def translit(word):
+    rus = "абвгдеёжзийклмнопрстуфхцчшщьъыэюя "
+    eng = ("a","b","v","g","d","e","e","zh","z","i","iy","k","l","m","n","o","p",
+           "r","s","t","u","f","h","ts","ch","sh","sch","","","y","e","u","ya","-")
 
-def translit(s):
-	"""
-	Transliterates the input string. The result is URL-compatible string,
-	with all spaces converted to '-'
-	"""
-	repls = {
-		"а" :"a" ,
-		"б" :"b" ,
-		"в" :"v" ,
-		"г" :"g" ,
-		"д" :"d" ,
-		"е" :"e" ,
-		"ё" : "e",
-		"ж" : "zh",
-		"з" : "z",
-		"и" : "i",
-		"й" : "iy",
-		"к" : "k",
-		"л" : "l",
-		"м" : "m",
-		"н" : "n",
-		"о" : "o",
-		"п" : "p",
-		"р" : "r",
-		"с" : "s",
-		"т" : "t",
-		"у" : "u",
-		"ф" : "f",
-		"х" : "h",
-		"ц" : "ts",
-		"ч" : "ch",
-		"ш" : "sh",
-		"щ" : "sch",
-		"ь" : "",
-		"Ъ" : "",
-		"Ы" : "y",
-		"э" : "e",
-		"ю" : "u",
-		"я" : "ya",
-		" " : "-"
-	}
-	s = s.strip()
-	s = s.lower()
+    word = word.strip().lower()
+    new_word = ""
+    for ch in word:
+        idx = rus.find(ch)
+        if idx >= 0: new_word += eng[idx]
+        elif ch.isalnum(): new_word += ch
 
-	sr = ""
-	for ch in s:
-		if ch in repls:
-			sr += repls[ch]
-		elif ch.isalnum():
-			sr += ch
-	while sr.find("--") > -1:
-		sr = sr.replace("--", "-")
+    while "--" in new_word: new_word = new_word.replace("--", "-")
 
-	if len(sr) > 0 and sr[-1] == "-":
-		sr = sr[:-1]
+    return new_word.strip("-")
 
-	return sr
+def parse(lines):
+    regex = re.compile(r"(?<=^<!--) *\w+ *(?=-->\n$)")
 
-def rm_all_files_in_dir(path):
-	""" Emptyes the folder, specifyed in path """
-	os.system("rm -r " + path + "/*")
+    body = dict()
+    found = None
+    tag_name, content = "", ""
+    for line in lines:
+        found = regex.search(line)
+        if found is not None:
+            if tag_name != "": body[tag_name] = content
+            tag_name = found.group().strip()
+            content = ""
+        else:
+            content += line
 
-def load_post_structure(filepath):
-	"""
-	Load .md file of the post, specifyed in filepath, into internal strcuture
-	"""
-	post = {
-		"date" : None,
-		"title" : "",
-		"meta_keywords":"",
-		"meta_description":"",
-		"url" : "",
-		"intro" : "",
-		"content" : ""
-	}
+    body[tag_name] = content
+    return body
 
-	try:
-		f = open(filepath, "r")
-	except IOError:
-		sys.exit("No such .md file: {}".format(filepath))
+def posts_generator():
+    md_filenames = os.listdir(MDS_FOLDER)
 
-	# Date
-	f.readline() # hint line
-	sd = f.readline()
-	if len(sd) > 1:
-		sd = sd[:-1] # remove \n
-		post["date"] = datetime.datetime.strptime(sd, "%d.%m.%Y")
-	else:
-		sys.exit("Date Line shouldn't be empty in " + filepath)
+    for md_filename in md_filenames:
+        md_file = os.path.join(MDS_FOLDER, md_filename)
+        with open(md_file) as file:
+            body = parse( file.readlines() )
+            body["url"] = translit( body["title"] )
+            body["url"] = os.path.join("/", POSTS_FOLDER, body["url"])
+            body["not_listed"] = md_filename.startswith(".")
+            body["date"] = body["date"].strip()
+            body["date"] = datetime.datetime.strptime(body["date"], "%d.%m.%Y")
+        yield body
 
-	#Title
-	f.readline() # hint line
-	post["title"] = f.readline()
-	if len( post["title"] ) > 1:
-		post["title"] = post["title"][:-1] # remove \n
-	else:
-		sys.exit("Title Line shouldn't be empty in " + filepath)
+def publish_post(post):
+    post["content"] = mistune.markdown(post["content"], escape=False)
 
-	#Meta-keywords
-	f.readline() # hint line
-	post["meta_keywords"] = f.readline()[:-1]
+    theme_path = os.path.join(os.path.dirname(__file__), THEME_FOLDER)
+    template_loader = jinja2.FileSystemLoader(theme_path)
+    engine = jinja2.Environment(loader=template_loader)
 
-	#Meta-description
-	f.readline() # hint line
-	post["meta_description"] = f.readline()[:-1]
+    post_template = engine.get_template("post.html")
+    page = post_template.render(post=post)
 
-	#Introduction
-	f.readline() # hint line
-	line = ""
-	while line != "\n":
-		post["intro"] += line
-		line = f.readline()
+    post_folder = os.path.join("." + post["url"])
+    post_file = os.path.join(post_folder, "index.html")
+    os.mkdir(post_folder)
 
-	#Content
-	f.readline() # hint line
-	for line in f:
-		post["content"] += line
+    with open(post_file, "w") as f:
+        f.write(page)
 
-	f.close()
+def publish_index(index_dicts):
+    theme_path = os.path.join(os.path.dirname(__file__), THEME_FOLDER)
+    template_loader = jinja2.FileSystemLoader(theme_path)
+    engine = jinja2.Environment(loader=template_loader)
+    index_template = engine.get_template("index.html")
 
-	post["url"] = os.path.join("/", POSTS_FOLDER, translit(post["title"]) )
-	convert_in_markdown(post)
+    page = index_template.render(posts=index_dicts)
+    with open("index.html", "w") as f:
+        f.write(page)
 
-	return post
+def publish():
+    shutil.rmtree(POSTS_FOLDER)
+    os.mkdir(POSTS_FOLDER)
 
-def convert_in_markdown(post):
-	"""
-	Converts all markdown-fields of the posts into their HTML repr.
-	"""
-	md2html = mistune.Markdown()
-	post["intro"] = md2html(post["intro"])
-	post["content"] = md2html(post["content"])
-	return
+    index_dicts = []
+    for post in posts_generator():
+        publish_post(post)
+        if "content" in post.keys(): del post["content"]
+        if   not post["not_listed"]: index_dicts.append(post)
 
-def build_posts_index_in_dir(pub_dir):
-	"""
-	Load all .md posts into the list, sorted by date
-	"""
-	files = ( f for f in os.listdir(pub_dir) if os.path.isfile( os.path.join(pub_dir, f) ) )
-	index = ( load_post_structure( os.path.join(pub_dir, f) ) for f in files )
-
-	# newest posts are displayed first
-	index = sorted( index, key=lambda post: post["date"], reverse=True )
-	return index
-
-def make_index_and_posts_pages(posts_tuple):
-	"""
-	The argument is inner representation of all posts
-	Creates HTML file of index page. Creates folders for posts and their HTML files.
-	Uses Jinja2 as template engine
-	"""
-	jenv = jinja2.Environment(
-	    loader=jinja2.FileSystemLoader( os.path.join( os.path.dirname(__file__), THEME_FOLDER ) )
-	)
-
-	index_page = jenv.get_template('index.html')
-	index_page_code = index_page.render(posts=posts_tuple)
-	with open("index.html", "w") as fh:
-	    fh.write(index_page_code)
-
-	for post in posts_tuple:
-		post_page = jenv.get_template('post.html')
-		post_page_code = post_page.render(post=post)
-
-		post_dir = "." + post["url"] 
-		os.mkdir( post_dir )
-		with open( os.path.join(post_dir, "index.html"), "w") as fh:
-			fh.write(post_page_code)
-
+    index_dicts.sort(key=lambda post: post["date"], reverse=True )
+    publish_index(index_dicts)
 
 if __name__ == "__main__":
-	posts_tuple = build_posts_index_in_dir( MDS_FOLDER )
-	rm_all_files_in_dir( POSTS_FOLDER )
-	make_index_and_posts_pages( posts_tuple )
+    publish()
