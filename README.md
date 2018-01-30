@@ -1,7 +1,19 @@
-## About
-`publish` is one of the simplest static site generators 
-## Requerements && Dependencies
-Python3, Mistune, Jinja2
+# Publish
+`publish` is one of the simplest static site generators: 
+ ```> ./publish.py``` and you are done
+## Installation
+```
+> git clone git@github.com:Zamony/publish.git site && cd site && rm -rf .git
+> pipenv install --three
+```
+## Update
+From site folder:
+```
+> cp -r md-files .. && cd ../
+> rm -rf site && git clone git@github.com:Zamony/publish.git site && cd site && rm -rf .git 
+> rm -rf md-files && mv ../md-files .
+> pipenv install --three
+```
 ## Usage
 use this command to build your website's pages:
 >./publish.py
