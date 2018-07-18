@@ -4,6 +4,7 @@ Put your markdown files to the *md-files* folder and launch *publish.py*:
 ```bash
 python publish.py
 ```
+Examples of markdown files [are presented](https://github.com/Zamony/zamony.github.io/tree/master/md-files).
 
 ### Installation
 
