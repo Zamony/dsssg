@@ -1,161 +1,188 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
 
-"""
-use this command to build your website's pages:
->./publish.py
-
-if it fails, you need to locate your Python3 binary:
->[PATH_TO_YOUR_PYTHON3_INTERPRETER_BINARY] publish.py
- 
-use this command to show this message:
->./publish.py --help
-
-NB! Each `*.md` file should have these three contructions defined: 
-<!-- date -->
-01.01.1970
-<!-- title -->
-This is the title of my post
-<!-- content -->
-My post's content
-
-Hint: use Python to view your website's pages in browser (0.0.0.0:8888)
->[PATH_TO_YOUR_PYTHON3_INTERPRETER_BINARY] -m http.server 8888
-"""
-
-import re
-import os
-import sys
-import shutil
+import collections
+import datetime
 import locale
+import pathlib
+import shutil
+from typing import Dict, Iterable, Iterator, List
+
 import jinja2
 import mistune
-from datetime import datetime
+from pygments import highlight
+from pygments.formatters import html
+from pygments.lexers import get_lexer_by_name
 
-POSTS_FOLDER, MDS_FOLDER, THEME_FOLDER = "posts", "md-files", "theme"
-LOCALE, TIME_FORMAT = "ru_RU.UTF-8", "%d.%m.%Y"
+locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
 
-locale.setlocale(locale.LC_ALL, LOCALE)
+MetaPost = collections.namedtuple(
+    "MetaPost", ["body", "listed", "date", "url"]
+)
 
-def translit(word):
+
+class HighlightRenderer(mistune.Renderer):
+    def block_code(self, code, lang):
+        if not lang:
+            print("no lang")
+            return f"\n<pre><code>{mistune.escape(code)}</code></pre>\n"
+        lexer = get_lexer_by_name(lang, stripall=True)
+        formatter = html.HtmlFormatter()
+        formatter.noclasses = True
+        return highlight(code, lexer, formatter)
+
+
+def translit(title: str) -> str:
     rus = "абвгдеёжзийклмнопрстуфхцчшщьъыэюя "
-    eng = ("a","b","v","g","d","e","e","zh","z","i","iy",
-           "k","l","m","n","o","p","r","s","t","u","f","h",
-           "ts","ch","sh","sch","","","y","e","u","ya","-")
+    eng = ("a", "b", "v", "g", "d", "e", "e", "zh", "z", "i", "iy",
+           "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "f", "h",
+           "ts", "ch", "sh", "sch", "", "", "y", "e", "u", "ya", "-")
 
-    word = word.strip().lower()
-    new_word = ""
-    for ch in word:
+    title = title.strip().lower()
+    new_title = ""
+    for ch in title:
         idx = rus.find(ch)
-        if idx >= 0: new_word += eng[idx]
-        elif ch.isalnum(): new_word += ch
+        if idx >= 0:
+            new_title += eng[idx]
+        elif ch.isalnum():
+            new_title += ch
 
-    while "--" in new_word: new_word = new_word.replace("--", "-")
+    while "--" in new_title:
+        new_title = new_title.replace("--", "-")
 
-    return new_word.strip("-")
+    return new_title.strip("-")
 
-def parse(lines):
-    regex = re.compile(r"(?<=^<!--) *\w+ *(?=-->\n$)")
 
-    body = dict()
-    found = None
-    tag_name, content = "", ""
+def parse(lines: Iterable[str]) -> Dict[str, str]:
+    pref, suff = "<!--", "-->"
+    post = collections.defaultdict(str)
+
     for line in lines:
-        found = regex.search(line)
-        if found is not None:
-            if tag_name != "": body[tag_name] = content
-            tag_name = found.group().strip()
-            content = ""
+        if line.lstrip().startswith(pref) and line.rstrip().endswith(suff):
+            line = line.strip()
+            space_idx = line.find(" ")
+            identifier = line[len(pref):space_idx]
+            if space_idx > 0 and identifier.isidentifier():
+                post[identifier] = line[space_idx+1:-len(suff)]
         else:
-            content += line
+            post["content"] += line
 
-    body[tag_name] = content
-    return body
+    return post
 
-def get_parse_err(body, md_name):
-    for var in ("date", "content", "title"):
-        if var not in body:
-            return True, "`{}` not in {}, aborting".format(var, md_name)
-        elif str(body[var]).strip() == "":
-            return True, "`{}` is empty (in {}), aborting".format(var, md_name)
-    try:
-        datetime.strptime(body["date"].strip(), TIME_FORMAT)
-    except ValueError:
-        return ( True, 
-            "Incorrect `date` format in {}, got: {}" \
-            "Should be {}".format(md_name, body["date"].strip(), TIME_FORMAT)
+
+def posts_generator(
+    md_files: Iterable[pathlib.Path], output_folder: pathlib.Path
+) -> Iterator[MetaPost]:
+    for md in md_files:
+        body = None
+        with md.open() as file:
+            body = parse(file)
+
+        post_url = translit(body["title"])
+        if post_url == "":
+            raise ValueError(
+                """{}: неправильное или отсутствующее поле title.
+                Поле title должно содержать буквы""".format(md.name)
             )
-    return False, ""
 
-def posts_generator():
-    if MDS_FOLDER not in os.listdir():
-        os.mkdir(MDS_FOLDER)
-        print("{} folder wasn't found, making one...".format(MDS_FOLDER))
-        print("Write some `*.md` files to the folder and try again.")
-        sys.exit()
-    
-    md_filenames = os.listdir(MDS_FOLDER)
-    for md_filename in md_filenames:
-        md_file = os.path.join(MDS_FOLDER, md_filename)
-        with open(md_file) as file:
-            body = parse( file.readlines() )
-            was_err, err_msg = get_parse_err(body, md_filename)
-            if was_err: sys.exit(err_msg)
+        try:
+            date = datetime.datetime.strptime(
+                body["date"].strip(), "%d.%m.%Y"
+            )
+        except ValueError as std_date_exception:
+            raise ValueError(
+                """{}: неправильное или отсутствующее поле date.
+                Дата должна быть в формате дд.мм.ГГГГ""".format(md.name)
+            ) from std_date_exception
 
-            if "cut" in body:
-                body["cut"], body["content"] = body["content"], body["cut"]
-                body["content"] = body["cut"] + body["content"]
+        yield MetaPost(
+            body=body, url=str(post_url),
+            listed=not md.name.startswith("_"), date=date
+        )
 
-            body["url"] = translit( body["title"] )
-            body["url"] = os.path.join("/", POSTS_FOLDER, body["url"])
-            body["not_listed"] = md_filename.startswith(".")
-            body["date"] = body["date"].strip()
-            body["date"] = datetime.strptime(body["date"], TIME_FORMAT)
-        yield body
 
-def publish_post(post):
-    post["content"] = mistune.markdown(post["content"], escape=False)
-    if "cut" in post: post["cut"] = mistune.markdown(post["cut"], escape=False)
-    
-    theme_path = os.path.join(os.path.dirname(__file__), THEME_FOLDER)
-    template_loader = jinja2.FileSystemLoader(theme_path)
-    engine = jinja2.Environment(loader=template_loader)
+def get_md_files() -> Iterator[pathlib.Path]:
+    md_folder = pathlib.Path("md-files")
+    md_folder.mkdir(exist_ok=True)
+    return md_folder.glob("*.md")
 
-    post_template = engine.get_template("post.html")
-    page = post_template.render(post=post)
 
-    post_folder = os.path.join("." + post["url"])
-    post_file = os.path.join(post_folder, "index.html")
-    os.mkdir(post_folder)
+def make_directory_clean(directory: pathlib.Path) -> None:
+    shutil.rmtree(f"{directory}")
+    directory.mkdir()
 
-    with open(post_file, "w") as f:
-        f.write(page)
 
-def publish_index(index_dicts):
-    theme_path = os.path.join(os.path.dirname(__file__), THEME_FOLDER)
-    template_loader = jinja2.FileSystemLoader(theme_path)
-    engine = jinja2.Environment(loader=template_loader)
-    index_template = engine.get_template("index.html")
+def publish_pages(
+    output_folder: pathlib.Path, markdown_generator: mistune.Markdown,
+    template_engine: jinja2.Environment
+) -> List[MetaPost]:
+    index = []
+    md_files = get_md_files()
+    for meta_post in posts_generator(md_files, output_folder):
+        meta_post = post2html(meta_post, markdown_generator)
+        make_page(meta_post, output_folder, template_engine)
+        meta_post.body["content"] = ""
+        if meta_post.listed:
+            index.append(meta_post)
 
-    page = index_template.render(posts=index_dicts)
-    with open("index.html", "w") as f:
-        f.write(page)
+    return index
 
-def publish():
-    if POSTS_FOLDER in os.listdir(): shutil.rmtree(POSTS_FOLDER)
-    os.mkdir(POSTS_FOLDER)
 
-    index_dicts = []
-    for post in posts_generator():
-        publish_post(post)
-        del post["content"]
-        if not post["not_listed"]: index_dicts.append(post)
+def make_page(
+    meta_post: MetaPost, output_folder: pathlib.Path,
+    template_engine: jinja2.Environment
+) -> None:
+    try:
+        page = template_engine.get_template("page.html")
+    except jinja2.TemplateNotFound as template_not_found_err:
+        raise jinja2.TemplateNotFound(
+            "Не найден шаблон для страницы статьи: theme/page.html"
+        ) from template_not_found_err
 
-    index_dicts.sort(key=lambda post: post["date"], reverse=True )
-    publish_index(index_dicts)
+    html = page.render(post=meta_post)
+    output_folder.joinpath(meta_post.url).mkdir(exist_ok=True)
+    output_folder.joinpath(meta_post.url, "index.html").write_text(html)
+
+
+def make_index(
+    index: List[MetaPost], pages_folder: pathlib.Path,
+    template_engine: jinja2.Environment
+) -> None:
+    try:
+        index_page = template_engine.get_template("index.html")
+    except jinja2.TemplateNotFound as template_not_found_err:
+        raise jinja2.TemplateNotFound(
+            "Не найден шаблон главной страницы: theme/index.html"
+        ) from template_not_found_err
+
+    html = index_page.render(posts=index, pages_folder=str(pages_folder))
+    pathlib.Path("index.html").write_text(html)
+
+
+def post2html(meta_post: MetaPost, markdown: mistune.Markdown) -> MetaPost:
+    for key in meta_post.body:
+        if "\n" in meta_post.body[key]:
+            meta_post.body[key] = markdown(meta_post.body[key])
+    return meta_post
+
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        publish()
-        print("Successfully created your website!")
-    else:
-        print(__doc__)
+    renderer = HighlightRenderer()
+    markdown_generator = mistune.Markdown(renderer=renderer)
+    template_engine = jinja2.Environment(
+        loader=jinja2.FileSystemLoader("theme")
+    )
+
+    pages_folder = pathlib.Path("pages")
+    pages_folder.mkdir(exist_ok=True)
+    make_directory_clean(pages_folder)
+
+    index = []
+    try:
+        index = publish_pages(
+            pages_folder, markdown_generator, template_engine
+        )
+    except (ValueError, jinja2.TemplateNotFound) as err:
+        print(err)
+
+    index.sort(key=lambda post: post.date, reverse=True)
+    make_index(index, pages_folder, template_engine)

@@ -1,0 +1,28 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="{{ post.body['meta_description'] }}">
+    <title>DSSSG Blog</title>
+    <link rel="shortcut icon" type="image/png" href="/imgs/favicon.png"/>
+    <link href='/theme/normalize.css' rel='stylesheet' type='text/css'>
+    <link href='/theme/style.css' rel='stylesheet' type='text/css'>
+    </head>
+    <body>
+        <div id="header" class="page-header">
+            <a href="/"><img alt="Cool Image" src="/imgs/logo.jpg"></a>
+            <span class="tooltip">Больше статей!</span>
+            <h1>{{ post.body["title"] }}</h1>
+        </div>
+        <hr>
+        <div id="post-body">{{ post.body["content"] }}</div>
+        <hr>
+        <div id="footer">
+            <div id="menu">
+                <a href="#">Twitter</a>
+                <a href="#">Facebook</a>
+                <a href="#">Github</a>
+            </div>
+        </div>
+    </body>
+</html>

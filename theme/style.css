@@ -1,0 +1,187 @@
+/* Start of "Micro clearfix" */
+.cf { zoom: 1; }
+.cf:before,
+.cf:after { content: ""; display: table; }
+.cf:after { clear: both; }
+
+/*Start of common styles*/
+    body {
+        font-family: Ubuntu, Verdana, Arial;
+        padding:0 10px;
+        padding-bottom: 10px;
+    }
+
+    a {
+        color: #2A6496;
+        text-decoration: none;
+    }
+        a:hover {
+            background: #2A6496;
+            color: #fff;
+        }
+
+    hr {
+        background-image: -webkit-gradient(linear, 0 0, 100% 0, from(transparent), color-stop(0.5, rgba(0, 0, :;, 0.2)), to(transparent));
+        background-image: -webkit-linear-gradient(to left, transparent, rgba(0, 0, 0, 0.2), transparent);
+        background-image: -moz-linear-gradient(to left, transparent, rgba(0, 0, 0, 0.2), transparent);
+        background-image: -o-linear-gradient(to left, transparent, rgba(0, 0, 0, 0.2), transparent);
+        background-image: linear-gradient(to left, transparent, rgba(0, 0, 0, 0.2), transparent);
+        border: 0 none;
+        height: 1px;
+        max-width: 540px;
+        margin: 10px auto;
+        display: block;
+    }
+
+    #menu {
+        text-align: center;
+    }
+        #menu a {
+            padding-right: 5px;
+        }
+
+    #header {
+        text-align: center;
+        height : 200px;
+        padding-top: 20px;
+    }
+        #header img {
+            height: 92px;
+            width: 92px;
+            border-radius: 50px;
+            margin-top:5px;
+        }
+        #header > a {
+            height:102px;
+            width:102px;
+            display:inline-block;
+            border-radius:50px;
+            background:none;
+            outline: 0;
+        }
+            #header > a:hover{
+                background: #ccc !important;
+            }
+    #footer {
+        text-align: center;
+    }
+    #footer > iframe {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+/* Start of Index Page styles */
+#posts {
+    padding: 0;
+}
+
+    #posts li {
+        list-style-type: none;
+        max-width: 540px;
+        margin: 0 auto;
+        font-size: 1.1em;
+        padding: 10px 0;
+    }
+
+        #posts li a {
+            float: left;
+            display: block;
+            font-weight: 500;
+        }
+
+        #posts li div {
+            color: #777;
+            font-weight: 300;
+            float: right;
+        }
+
+/* Start of Page styles */
+.page-header {
+    height: auto !important;
+}
+
+    .page-header img {
+        height: 50px !important;
+        width: 50px !important;
+        margin-top:3px !important;
+    }
+
+    .page-header > a {
+        height:56px !important;
+        width:56px !important;
+    }
+
+    .page-header > a:hover + span.tooltip{
+        display: inline !important;
+    }
+
+h1 {
+    font-weight: 500;
+}
+
+#post-body {
+    max-width: 620px;
+    font-weight: 400;
+    color: #444;
+    margin: 20px auto;
+    line-height: 1.5;
+}
+
+    #post-body h1, h2, h3 {
+        font-family : Arial, Open Sans, Verdana;
+        font-weight: 500;
+    }
+
+    #post-body blockquote {
+        border-left: 5px #e6e6e6 solid;
+        margin: 0;
+        padding-left: 15px;
+    }
+
+    #post-body img {
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+        opacity: 0.9;
+    }
+
+    #post-body img:hover {
+        opacity: 1;
+    }
+
+    #post-body pre {
+        max-width: 560px;
+        margin: 0 auto;
+        font-size: 0.8em;
+        overflow: auto;
+    }
+
+span.tooltip {
+    display: none;
+    position: absolute;
+    width: 100px;
+    height: 20px;
+    line-height: 20px;
+    padding: 4px;
+    font-size: 12px;
+    text-align: center;
+    color: rgb(255, 255, 255);
+    background: rgba(51, 51, 51, 0.8);
+    border-radius: 4px;
+    text-shadow: rgba(0, 0, 0, 0.6) 1px 1px 1px;
+    box-shadow: none;
+    margin-left: 10px;
+    margin-top: 15px;
+}
+
+span.tooltip:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-width: 7px;
+    border-style: solid;
+    border-color: transparent rgba(51, 51, 51, 0.8) transparent transparent;
+    top: 7px;
+    left: -14px;
+}

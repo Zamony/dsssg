@@ -3,55 +3,20 @@
     <head>
         <meta charset="UTF-8">
         <title>DSSSG Blog</title>
-        <link rel="shortcut icon" type="image/png" href="theme/favicon.png"/>
-        <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&amp;subset=cyrillic" rel="stylesheet"> 
-        <link href='theme/normalize.css' rel='stylesheet' type='text/css'>
-        <style>
-            /* Start of "Micro clearfix" */
-            .cf { zoom: 1; }
-            .cf:before,
-            .cf:after { content: ""; display: table; }
-            .cf:after { clear: both; }
-            /* End of "Micro clearfix" */
-        </style>
-        <link href='theme/common.css' rel='stylesheet' type='text/css'>
-
-        <style>
-            /* Start of Index Page styles */
-            #posts {
-                padding: 0;
-            }
-            #posts li {
-                text-align: center;
-                list-style-type: none;
-                max-width: 540px;
-                margin: 0 auto;
-                font-size: 1.2em;
-                padding: 10px 0;
-            }
-            #posts li a {
-                float: left;
-                display: block;
-                font-weight: 500;
-            }
-            #posts li div {
-                color: #777;
-                font-weight: 300;
-                float: right;
-            }
-            /* End of Index Page styles */
-        </style>
+        <link rel="shortcut icon" type="image/png" href="/imgs/favicon.png"/>
+        <link href='/theme/normalize.css' rel='stylesheet' type='text/css'>
+        <link href='/theme/style.css' rel='stylesheet' type='text/css'>
     </head>
     <body>
         <div id="header">
-            <a href="#"><img alt="Cool Image" src="./theme/logo.jpg"></a>
+            <a href="#"><img alt="Cool Image" src="/imgs/logo.jpg"></a>
             <h1>Engineering Stuff</h1>
         </div>
         <hr>
         <ul id="posts" class="cf">
             {% for post in posts %}
             <li class="cf">
-                <a href="{{ post["url"] }}">{{ post["title"] }}</a>
+                <a href="{{ pages_folder }}/{{ post.url }}">{{ post.body["title"] }}</a>
                 <div>{{ post["date"].strftime("%d %b. %Y") }}</div>
             </li>
             {% endfor %}
